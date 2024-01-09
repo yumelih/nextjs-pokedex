@@ -1,0 +1,23 @@
+import { Pokemon, PokemonPage } from "@/models/Pokemon";
+import api from "./axiosInstance";
+
+export async function getPokemon(name: string) {
+  const delay = Math.random() * 2000;
+  await new Promise((r) => setTimeout(r, delay));
+
+  // Pokemon is the return type.
+  // api.get because it is GET request.
+  const response = await api.get<Pokemon>("/pokemon/" + name);
+  return response.data;
+}
+
+export async function getPokemonPage(page: number) {
+  const pageSize = 12;
+  //search params
+  //limit => how many pokemon you want to get
+  //offset => how many pokemon you want to skip
+  const response = await api.get<PokemonPage>(
+    `/pokemon?limit=${pageSize}&offset=${pageSize * (page - 1)}`
+  );
+  return response.data;
+}
