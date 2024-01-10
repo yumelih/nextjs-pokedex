@@ -1,24 +1,30 @@
 //! [] in the file name because we can put different values in there e.g /pikachu, /balbashur
 
-import useSWR from "swr";
-
 import Head from "next/head";
 import Link from "next/link";
-import { Spinner } from "react-bootstrap";
+import { Button, Form, Spinner } from "react-bootstrap";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import usePokemon from "@/hooks/usePokemon";
+import { FormEvent } from "react";
 import * as PokemonAPI from "@/network/pokemon-api";
 
 export default function PokemonDetailsPage() {
   const router = useRouter();
   const pokemonName = router.query.pokemon?.toString() || "";
 
-  //pokemonName is the key
-  //pokemonName passed into PokemonAPI.getPokemon automatically. So we don't need the arrow function
-  const { data: pokemon, isLoading: pokemonLoading } = useSWR(
-    pokemonName,
-    (pokemonName) => PokemonAPI.getPokemon(pokemonName)
-  );
+  const { pokemon, pokemonLoading, mutatePokemon } = usePokemon(pokemonName);
+
+  async function handleSubmitNickname(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const nickname = formData.get("nickname")?.toString().trim();
+
+    if (!pokemon || !nickname) return;
+
+    const update = await PokemonAPI.setNickname(pokemon, nickname);
+    mutatePokemon(update, { revalidate: false });
+  }
 
   return (
     <>
@@ -36,6 +42,7 @@ export default function PokemonDetailsPage() {
           </Link>
         </p>
         {pokemonLoading && <Spinner animation="grow" />}
+        {pokemon === null && <p>Pokemon not found</p>}
         {pokemon && (
           <>
             <h1 className="text-center text-capitalize">{pokemon.name}</h1>
@@ -54,9 +61,16 @@ export default function PokemonDetailsPage() {
                 <strong>Height:</strong> {pokemon.height * 10} cm
               </div>{" "}
               <div>
-                <strong>Weight:</strong> {pokemon.height / 10} kg
+                <strong>Weight:</strong> {pokemon.weight / 10} kg
               </div>
             </div>
+            <Form className="mt-4" onSubmit={handleSubmitNickname}>
+              <Form.Group controlId="pokemon-nickname-input" className="mb-3">
+                <Form.Label>Give this pokemon a nickname</Form.Label>
+                <Form.Control name="nickname" placeholder="E.g. Ferdinand" />
+                <Button type="submit">Set Nickname</Button>
+              </Form.Group>
+            </Form>
           </>
         )}
       </div>
